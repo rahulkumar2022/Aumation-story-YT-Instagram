@@ -192,7 +192,7 @@ def main():
         "response_type": "code",
         "scope": SCOPES,
         "access_type": "offline",
-        "prompt": "consent",
+        "prompt": "select_account consent",
     }
     auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urllib.parse.urlencode(auth_params)}"
 
