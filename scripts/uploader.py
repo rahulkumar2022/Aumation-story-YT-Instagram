@@ -119,18 +119,29 @@ def upload_to_youtube(video_path: str, title: str, description: str, tags: list,
         print(f"❌ Failed to transfer video binary: {e}")
         return None
 
-def main():
-    if not os.path.exists(QUEUE_FILE):
-        print("ℹ️ No publishing_queue.json found. Nothing to post.")
-        sys.exit(0)
+def load_queue():
+    if os.path.exists(QUEUE_FILE):
+        try:
+            with open(QUEUE_FILE, "r") as f:
+                return json.load(f)
+        except Exception:
+            return []
+    return []
 
-    with open(QUEUE_FILE, "r") as f:
-        queue = json.load(f)
+def save_queue(queue):
+    with open(QUEUE_FILE, "w") as f:
+        json.dump(queue, f, indent=2)
+
+def process_queue():
+    queue = load_queue()
+    if not queue:
+        print("ℹ️ No publishing_queue.json found. Nothing to post.")
+        return 0
 
     pending = [item for item in queue if not item.get("posted", False)]
     if not pending:
         print("✅ All queued videos have already been posted.")
-        sys.exit(0)
+        return 0
 
     print(f"📋 Found {len(pending)} pending video(s) to publish.")
     access_token = get_access_token()
@@ -140,7 +151,7 @@ def main():
         print("   Required GitHub Secrets: YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, YOUTUBE_REFRESH_TOKEN")
         print("   Simulating dry-run / queue verification mode.")
 
-    updated = False
+    updated_count = 0
     for item in pending:
         video_path = item.get("file_path")
         if not os.path.exists(video_path):
@@ -161,14 +172,17 @@ def main():
                 item["posted"] = True
                 item["status"] = "published"
                 item["published_url"] = url
-                updated = True
+                updated_count += 1
         else:
             print(f"   [DRY RUN] Ready to publish: '{item.get('title')}' ({item.get('type')}) -> {video_path}")
 
-    if updated:
-        with open(QUEUE_FILE, "w") as f:
-            json.dump(queue, f, indent=2)
+    if updated_count > 0:
+        save_queue(queue)
         print("💾 Updated publishing_queue.json with live publication links.")
+    return updated_count
+
+def main():
+    process_queue()
 
 if __name__ == "__main__":
     main()

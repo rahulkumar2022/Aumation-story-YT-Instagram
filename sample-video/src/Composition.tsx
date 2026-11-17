@@ -286,7 +286,7 @@ export const DedicatedShortComponent: React.FC<VideoProps> = () => {
       </Sequence>
 
       {/* Visual Sequences */}
-      <Sequence from={0} durationInFrames={s1Duration + 10}>
+      <Sequence durationInFrames={s1Duration + 10}>
         <ShortScene1 />
       </Sequence>
       <Sequence from={s1Duration} durationInFrames={s2Duration + 10}>
@@ -362,7 +362,7 @@ export const FullEpisodeLongComponent: React.FC<VideoProps> = () => {
       </Sequence>
 
       {/* Chapter 1: The Sunday Ritual */}
-      <Sequence from={0} durationInFrames={chunk + 15}>
+      <Sequence durationInFrames={chunk + 15}>
         <LongScene
           img="long_s1.jpg"
           chapter="Chapter 1: The Sunday Ritual"

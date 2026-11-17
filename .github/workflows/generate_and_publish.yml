@@ -49,13 +49,17 @@ jobs:
 
       - name: Install Python Dependencies
         run: |
-          pip install edge-tts numpy scipy requests
+          pip install edge-tts numpy scipy requests pytest
 
       - name: Install Remotion Dependencies
         run: |
           cd sample-video
           npm ci
           npx remotion browser ensure
+
+      - name: Run Test Suite (Unit & Integration Tests)
+        run: |
+          python3 -m pytest tests/
 
       - name: Determine Video Mode
         id: mode
