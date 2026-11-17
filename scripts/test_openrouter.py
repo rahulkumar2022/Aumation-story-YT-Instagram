@@ -37,7 +37,7 @@ def main():
     args = parser.parse_args()
 
     api_key = os.environ.get("OPENROUTER_API_KEY")
-    selected_model = args.model or os.environ.get("OPENROUTER_MODEL", "deepseek/deepseek-chat")
+    selected_model = args.model or os.environ.get("OPENROUTER_MODEL", "anthropic/claude-haiku-5.5")
     selected_image_model = args.image_model or os.environ.get("OPENROUTER_IMAGE_MODEL", "recraft/recraft-v4.1-flash-v2")
 
     print("=" * 65)

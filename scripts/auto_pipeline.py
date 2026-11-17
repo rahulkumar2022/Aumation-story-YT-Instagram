@@ -58,7 +58,7 @@ def generate_story_with_openrouter(mode: str, target_minutes: int = 10, model: s
         print("Using curated high-retention story template as fallback.")
         return get_short_story() if mode == "short" else get_long_story(target_minutes)
 
-    selected_model = model or os.environ.get("OPENROUTER_MODEL", "deepseek/deepseek-chat")
+    selected_model = model or os.environ.get("OPENROUTER_MODEL", "anthropic/claude-haiku-5.5")
     print(f"🤖 Calling OpenRouter API (Model: {selected_model}) for dynamic {mode.upper()} script...")
 
     if mode == "short":
