@@ -3,6 +3,8 @@ output/shorts/*.mp4
 output/long/*.mp4
 output/*.mp4
 output/*.log
+output/*.png
+output/*.jpg
 output/.*
 
 # Environment & API keys

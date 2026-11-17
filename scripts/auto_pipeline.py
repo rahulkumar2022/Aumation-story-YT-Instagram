@@ -106,12 +106,13 @@ def generate_story_with_openrouter(mode: str, target_minutes: int = 10, model: s
         req = urllib.request.Request("https://openrouter.ai/api/v1/chat/completions", data=json.dumps(payload).encode("utf-8"), headers=headers)
         with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode("utf-8"))
-            content = data["choices"][0]["message"]["content"].strip()
-            if content.startswith("```json"):
-                content = content[7:-3]
-            elif content.startswith("```"):
-                content = content[3:-3]
-            story = json.loads(content.strip())
+            raw_text = data["choices"][0]["message"]["content"].strip()
+            import re
+            json_match = re.search(r'\{.*\}', raw_text, re.DOTALL)
+            if json_match:
+                story = json.loads(json_match.group(0))
+            else:
+                story = json.loads(raw_text)
             print(f"✨ Successfully generated new story: '{story.get('title')}'")
             return story
     except Exception as e:
@@ -285,7 +286,7 @@ def generate_visual_panels(story: dict, mode: str, image_model: str = None):
         ratio = "9:16"
     else:
         targets = [
-            os.path.join(SAMPLE_VIDEO_DIR, "public", f"long_scene{i+1}.jpg")
+            os.path.join(SAMPLE_VIDEO_DIR, "public", f"long_s{i+1}.jpg")
             for i in range(min(5, len(prompts)))
         ]
         ratio = "16:9"
@@ -295,7 +296,7 @@ def generate_visual_panels(story: dict, mode: str, image_model: str = None):
             print(f"🖼️  Scene {i+1}/{len(targets)}...")
             generate_image_with_openrouter(prompts[i], target_path, aspect_ratio=ratio, model=image_model)
 
-def run_pipeline(mode: str, duration_minutes: int = 10, model: str = None, generate_images: bool = False, image_model: str = None):
+def run_pipeline(mode: str, duration_minutes: int = 10, model: str = None, generate_images: bool = True, image_model: str = None):
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     print("=" * 65)
     print(f"🚀 RUNNING AUTOMATED VIDEO PIPELINE: {mode.upper()}")
@@ -304,9 +305,12 @@ def run_pipeline(mode: str, duration_minutes: int = 10, model: str = None, gener
     # Step 1: Dynamic Story Generation (OpenRouter or Fallback)
     story = generate_story_with_openrouter(mode, duration_minutes, model=model)
 
-    # Optional: Dynamic Scene Image Generation via OpenRouter Image API
-    if generate_images:
+    # Step 2: Dynamic Scene Image Generation via OpenRouter Image API (Default: True if API key present)
+    has_api_key = bool(os.environ.get("OPENROUTER_API_KEY"))
+    if generate_images and has_api_key:
         generate_visual_panels(story, mode, image_model=image_model)
+    elif not has_api_key:
+        print("ℹ️ Skipping dynamic image generation (no OPENROUTER_API_KEY). Using cached scene artwork.")
 
     if mode == "short":
         out_filename = f"short_{timestamp}.mp4"
@@ -358,13 +362,13 @@ if __name__ == "__main__":
     parser.add_argument("--mode", choices=["short", "long"], required=True, help="Video mode (short=30-60s, long=8-20m)")
     parser.add_argument("--duration-minutes", type=int, default=10, help="Target duration in minutes for long mode (8-20)")
     parser.add_argument("--model", type=str, default=None, help="OpenRouter text model (e.g. deepseek/deepseek-chat, anthropic/claude-3.5-sonnet, openai/gpt-4o)")
-    parser.add_argument("--generate-images", action="store_true", help="Generate custom scene illustration panels using OpenRouter Image API")
+    parser.add_argument("--no-images", action="store_true", help="Skip generating new AI images and use cached scene artwork")
     parser.add_argument("--image-model", type=str, default=None, help="OpenRouter image model (e.g. recraft/recraft-v4.1-flash-v2, bytedance-seed/seedream-5-0-flash, black-forest-labs/flux.2-flex)")
     args = parser.parse_args()
     run_pipeline(
         args.mode,
         args.duration_minutes,
         model=args.model,
-        generate_images=args.generate_images,
+        generate_images=not args.no_images,
         image_model=args.image_model
     )
