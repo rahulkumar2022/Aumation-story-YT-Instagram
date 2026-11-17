@@ -138,14 +138,10 @@ const ChapterTag: React.FC<{ text: string; color?: string }> = ({
 
 const ShortScene1: React.FC = () => {
   const frame = useCurrentFrame();
-  const scale = interpolate(frame, [0, 240], [1.0, 1.12], { extrapolateRight: "clamp" });
-  const opacity = interpolate(frame, [225, 240], [1, 0], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
+  const scale = interpolate(frame, [0, 480], [1.0, 1.12], { extrapolateRight: "clamp" });
 
   return (
-    <div style={{ position: "absolute", inset: 0, backgroundColor: "#000", overflow: "hidden", opacity }}>
+    <div style={{ position: "absolute", inset: 0, backgroundColor: "#000", overflow: "hidden" }}>
       <Img
         src={staticFile("short_p1.jpg")}
         style={{
@@ -179,12 +175,11 @@ const ShortScene1: React.FC = () => {
 
 const ShortScene2: React.FC = () => {
   const frame = useCurrentFrame();
-  const scale = interpolate(frame, [0, 200], [1.02, 1.13], { extrapolateRight: "clamp" });
+  const scale = interpolate(frame, [0, 400], [1.02, 1.13], { extrapolateRight: "clamp" });
   const fadeIn = interpolate(frame, [0, 10], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const fadeOut = interpolate(frame, [185, 200], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
   return (
-    <div style={{ position: "absolute", inset: 0, backgroundColor: "#000", overflow: "hidden", opacity: fadeIn * fadeOut }}>
+    <div style={{ position: "absolute", inset: 0, backgroundColor: "#000", overflow: "hidden", opacity: fadeIn }}>
       <Img
         src={staticFile("short_p2.jpg")}
         style={{
@@ -212,9 +207,9 @@ const ShortScene2: React.FC = () => {
 
 const ShortScene3: React.FC = () => {
   const frame = useCurrentFrame();
-  const scale = interpolate(frame, [0, 500], [1.0, 1.09], { extrapolateRight: "clamp" });
+  const scale = interpolate(frame, [0, 700], [1.0, 1.10], { extrapolateRight: "clamp" });
   const fadeIn = interpolate(frame, [0, 10], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const isTwistPart = frame > 180;
+  const isTwistPart = frame > 280;
 
   return (
     <div style={{ position: "absolute", inset: 0, backgroundColor: "#000", overflow: "hidden", opacity: fadeIn }}>
@@ -253,12 +248,44 @@ export const DedicatedShortComponent: React.FC<VideoProps> = () => {
   const { durationInFrames } = useVideoConfig();
   const s1Duration = Math.floor(durationInFrames * 0.32);
   const s2Duration = Math.floor(durationInFrames * 0.28);
-  const s3Duration = durationInFrames - s1Duration - s2Duration + 20;
+  const s3Duration = durationInFrames - s1Duration - s2Duration;
 
   return (
     <div style={{ flex: 1, backgroundColor: "#000", position: "relative" }}>
       <TopProgressBar color="#ef4444" />
-      <Audio src={staticFile("short_narration.mp3")} />
+
+      {/* 1. Main Voice Narration */}
+      <Audio src={staticFile("short_narration.mp3")} volume={1.0} />
+
+      {/* 2. Emotional Background Score (Escalating Cinematic Tension) */}
+      <Audio
+        src={staticFile("bgm_escalation.mp3")}
+        volume={(f) =>
+          interpolate(
+            f,
+            [0, s1Duration, s1Duration + s2Duration, durationInFrames],
+            [0.18, 0.24, 0.14, 0.38],
+            { extrapolateRight: "clamp" }
+          )
+        }
+      />
+
+      {/* 3. Emotional SFX: Phone Ring on Speakerphone Scene */}
+      <Sequence from={s1Duration + 10} durationInFrames={90}>
+        <Audio src={staticFile("sfx/phone_ring.wav")} volume={0.4} />
+      </Sequence>
+
+      {/* 4. Emotional SFX: Tension Riser before the Rejection */}
+      <Sequence from={s1Duration + s2Duration - 110} durationInFrames={120}>
+        <Audio src={staticFile("sfx/tension_riser.wav")} volume={0.35} />
+      </Sequence>
+
+      {/* 5. Emotional SFX: Cinematic Sub Boom / Drop on The Rejection Twist */}
+      <Sequence from={s1Duration + s2Duration} durationInFrames={80}>
+        <Audio src={staticFile("sfx/sub_boom.wav")} volume={0.8} />
+      </Sequence>
+
+      {/* Visual Sequences */}
       <Sequence from={0} durationInFrames={s1Duration + 10}>
         <ShortScene1 />
       </Sequence>
@@ -284,7 +311,7 @@ const LongScene: React.FC<{
   origin?: string;
 }> = ({ img, chapter, subtitle, color = "#38bdf8", origin = "50% 50%" }) => {
   const frame = useCurrentFrame();
-  const scale = interpolate(frame, [0, 400], [1.0, 1.08], { extrapolateRight: "clamp" });
+  const scale = interpolate(frame, [0, 450], [1.0, 1.08], { extrapolateRight: "clamp" });
   const fadeIn = interpolate(frame, [0, 12], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
   return (
@@ -303,7 +330,36 @@ export const FullEpisodeLongComponent: React.FC<VideoProps> = () => {
 
   return (
     <div style={{ flex: 1, backgroundColor: "#000", position: "relative" }}>
-      <Audio src={staticFile("long_narration.mp3")} />
+      {/* 1. Main Voice Narration */}
+      <Audio src={staticFile("long_narration.mp3")} volume={1.0} />
+
+      {/* 2. Emotional Cinematic Score */}
+      <Audio
+        src={staticFile("bgm_escalation.mp3")}
+        volume={(f) =>
+          interpolate(
+            f,
+            [0, chunk * 2, chunk * 3, chunk * 4, durationInFrames],
+            [0.16, 0.22, 0.28, 0.12, 0.38],
+            { extrapolateRight: "clamp" }
+          )
+        }
+      />
+
+      {/* 3. Emotional SFX: Phone Ring on Chapter 4 */}
+      <Sequence from={chunk * 3 + 10} durationInFrames={90}>
+        <Audio src={staticFile("sfx/phone_ring.wav")} volume={0.45} />
+      </Sequence>
+
+      {/* 4. Emotional SFX: Tension Riser leading into the climax */}
+      <Sequence from={chunk * 4 - 110} durationInFrames={120}>
+        <Audio src={staticFile("sfx/tension_riser.wav")} volume={0.35} />
+      </Sequence>
+
+      {/* 5. Emotional SFX: Sub Boom / Drop on Chapter 5 (The Reveal) */}
+      <Sequence from={chunk * 4} durationInFrames={80}>
+        <Audio src={staticFile("sfx/sub_boom.wav")} volume={0.85} />
+      </Sequence>
 
       {/* Chapter 1: The Sunday Ritual */}
       <Sequence from={0} durationInFrames={chunk + 15}>
@@ -382,7 +438,6 @@ const calculateMetadataShort: CalculateMetadataFunction<VideoProps> = ({ props }
 export const MyComposition = () => {
   return (
     <>
-      {/* 1. Long-Form Episode (16:9 - 1920x1080, Dynamic 8 to 20 mins) */}
       <Composition
         id="FullEpisodeLong"
         component={FullEpisodeLongComponent}
@@ -393,7 +448,6 @@ export const MyComposition = () => {
         calculateMetadata={calculateMetadataLong}
       />
 
-      {/* 2. Short / Reel (9:16 - 1080x1920, Dynamic 30 to 60s) */}
       <Composition
         id="DedicatedShort"
         component={DedicatedShortComponent}
