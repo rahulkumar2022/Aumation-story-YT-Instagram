@@ -1,0 +1,33 @@
+{
+  "version": 2,
+  "skills": {
+    "ai-video-generation": {
+      "source": "101-skills/superpowers",
+      "commit": "becc25649700d5457772a00e5143e28ccf9e5afa",
+      "sourceType": "github",
+      "skillPath": "tools/video/ai-video-generation/SKILL.md",
+      "computedHash": "8ff792abc9b85aa6b7034bf720ab49e66e78fd65497a81036c078191688c6daf"
+    },
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "commit": "57217cf86ba38148a57af9e90d14a4c049558330",
+      "sourceType": "github",
+      "skillPath": "skills/find-skills/SKILL.md",
+      "computedHash": "7bc223e2aafbdbf6e50ea243ba6ef67fe432bb069ab439fea0390795dac0bf7f"
+    },
+    "remotion-create": {
+      "source": "remotion-dev/skills",
+      "commit": "3e20ac75161bc34468845df714701cc9bf6075f4",
+      "sourceType": "github",
+      "skillPath": "skills/remotion-create/SKILL.md",
+      "computedHash": "c160460ab01faf82d5a5ee1eb666557f88a1c514a1c1906dacccd914b7d544a6"
+    },
+    "remotion-render": {
+      "source": "remotion-dev/skills",
+      "commit": "3e20ac75161bc34468845df714701cc9bf6075f4",
+      "sourceType": "github",
+      "skillPath": "skills/remotion-render/SKILL.md",
+      "computedHash": "d5008cddb591bc18ae399ebd4fe23f6134a00ce1d7afc81ce7e0ba7ac02d0551"
+    }
+  }
+}

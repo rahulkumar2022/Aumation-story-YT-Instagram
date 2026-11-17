@@ -1,0 +1,47 @@
+name: Automated Video Poster
+
+on:
+  schedule:
+    # Runs twice daily at 11:00 AM and 4:00 PM UTC
+    - cron: '0 11,16 * * *'
+  push:
+    paths:
+      - 'output/publishing_queue.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run Social Publisher
+        env:
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+          YOUTUBE_PRIVACY_STATUS: "public"
+        run: |
+          python3 scripts/uploader.py
+
+      - name: Commit Updated Publishing Queue
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          if [[ -n $(git status -s output/publishing_queue.json) ]]; then
+            git add output/publishing_queue.json
+            git commit -m "chore: update video publishing status [skip ci]"
+            git push
+          else
+            echo "No changes to publishing_queue.json"
+          fi

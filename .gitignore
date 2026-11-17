@@ -1,0 +1,12 @@
+# Ignore large video binary files (store queue only)
+output/shorts/*.mp4
+output/long/*.mp4
+output/*.mp4
+output/*.log
+output/.*
+
+# Ignore dependencies
+**/node_modules/
+**/.DS_Store
+*.tmp
+*.raw.mp3
