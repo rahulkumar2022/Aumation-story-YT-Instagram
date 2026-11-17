@@ -69,7 +69,8 @@ def generate_story_with_openrouter(mode: str, target_minutes: int = 10, model: s
             "'title' (high CTR YouTube title), "
             "'description' (2 sentences with hashtags #pov #karma #shorts), "
             "'tags' (array of 5 tag strings), "
-            "'script' (the exact spoken narration text, approximately 90 to 130 words)."
+            "'script' (the exact spoken narration text, approximately 90 to 130 words), "
+            "'image_prompts' (array of exactly 3 visual scene descriptions for motion comic panels: 1. opening dinner scene, 2. tense phone call scene, 3. plot twist reveal scene)."
         )
     else:
         target_words = max(1100, target_minutes * 145)
@@ -82,7 +83,8 @@ def generate_story_with_openrouter(mode: str, target_minutes: int = 10, model: s
             "'title' (dramatic YouTube title), "
             "'description' (engaging summary with hashtags), "
             "'tags' (array of 6 tag strings), "
-            "'script' (the complete narration, broken into 5-6 acts, vivid storytelling dialogue)."
+            "'script' (the complete narration, broken into 5-6 acts, vivid storytelling dialogue), "
+            "'image_prompts' (array of exactly 5 visual scene descriptions for widescreen panels across the 5 acts)."
         )
 
     headers = {
@@ -114,7 +116,6 @@ def generate_story_with_openrouter(mode: str, target_minutes: int = 10, model: s
             return story
     except Exception as e:
         print(f"⚠️ OpenRouter generation failed ({e}). Falling back to local template.")
-        return get_short_story() if mode == "short" else get_long_story(target_minutes)
         return get_short_story() if mode == "short" else get_long_story(target_minutes)
 
 # --------------------------------------------------------------------------
@@ -261,7 +262,40 @@ def save_queue(queue):
     with open(QUEUE_FILE, "w") as f:
         json.dump(queue, f, indent=2)
 
-def run_pipeline(mode: str, duration_minutes: int = 10, model: str = None):
+def generate_visual_panels(story: dict, mode: str, image_model: str = None):
+    """Generates visual scene panels using OpenRouter Unified Image API."""
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    try:
+        from generate_images import generate_image_with_openrouter
+    except Exception as e:
+        print(f"⚠️ Could not load image generator module: {e}")
+        return
+
+    prompts = story.get("image_prompts", [])
+    if not prompts:
+        return
+
+    print(f"\n🎨 Generating {len(prompts)} visual scenes via OpenRouter Image API...")
+    if mode == "short":
+        targets = [
+            os.path.join(SAMPLE_VIDEO_DIR, "public", "short_p1.jpg"),
+            os.path.join(SAMPLE_VIDEO_DIR, "public", "short_p2.jpg"),
+            os.path.join(SAMPLE_VIDEO_DIR, "public", "short_p3.jpg"),
+        ]
+        ratio = "9:16"
+    else:
+        targets = [
+            os.path.join(SAMPLE_VIDEO_DIR, "public", f"long_scene{i+1}.jpg")
+            for i in range(min(5, len(prompts)))
+        ]
+        ratio = "16:9"
+
+    for i, target_path in enumerate(targets):
+        if i < len(prompts):
+            print(f"🖼️  Scene {i+1}/{len(targets)}...")
+            generate_image_with_openrouter(prompts[i], target_path, aspect_ratio=ratio, model=image_model)
+
+def run_pipeline(mode: str, duration_minutes: int = 10, model: str = None, generate_images: bool = False, image_model: str = None):
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     print("=" * 65)
     print(f"🚀 RUNNING AUTOMATED VIDEO PIPELINE: {mode.upper()}")
@@ -269,6 +303,10 @@ def run_pipeline(mode: str, duration_minutes: int = 10, model: str = None):
 
     # Step 1: Dynamic Story Generation (OpenRouter or Fallback)
     story = generate_story_with_openrouter(mode, duration_minutes, model=model)
+
+    # Optional: Dynamic Scene Image Generation via OpenRouter Image API
+    if generate_images:
+        generate_visual_panels(story, mode, image_model=image_model)
 
     if mode == "short":
         out_filename = f"short_{timestamp}.mp4"
@@ -319,6 +357,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Automated Video Generator with OpenRouter & Remotion")
     parser.add_argument("--mode", choices=["short", "long"], required=True, help="Video mode (short=30-60s, long=8-20m)")
     parser.add_argument("--duration-minutes", type=int, default=10, help="Target duration in minutes for long mode (8-20)")
-    parser.add_argument("--model", type=str, default=None, help="OpenRouter model (e.g. deepseek/deepseek-chat, anthropic/claude-3.5-sonnet, openai/gpt-4o)")
+    parser.add_argument("--model", type=str, default=None, help="OpenRouter text model (e.g. deepseek/deepseek-chat, anthropic/claude-3.5-sonnet, openai/gpt-4o)")
+    parser.add_argument("--generate-images", action="store_true", help="Generate custom scene illustration panels using OpenRouter Image API")
+    parser.add_argument("--image-model", type=str, default=None, help="OpenRouter image model (e.g. recraft/recraft-v4.1-flash-v2, bytedance-seed/seedream-5-0-flash, black-forest-labs/flux.2-flex)")
     args = parser.parse_args()
-    run_pipeline(args.mode, args.duration_minutes, model=args.model)
+    run_pipeline(
+        args.mode,
+        args.duration_minutes,
+        model=args.model,
+        generate_images=args.generate_images,
+        image_model=args.image_model
+    )

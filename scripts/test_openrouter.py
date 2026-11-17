@@ -31,11 +31,14 @@ if os.path.isfile(dotenv_path):
 
 def main():
     parser = argparse.ArgumentParser(description="Test OpenRouter API Key and Model Connectivity")
-    parser.add_argument("--model", type=str, default=None, help="OpenRouter model identifier")
+    parser.add_argument("--model", type=str, default=None, help="OpenRouter text model identifier")
+    parser.add_argument("--image-model", type=str, default=None, help="OpenRouter image model identifier")
+    parser.add_argument("--test-image", action="store_true", help="Also generate a test image panel via OpenRouter Image API")
     args = parser.parse_args()
 
     api_key = os.environ.get("OPENROUTER_API_KEY")
     selected_model = args.model or os.environ.get("OPENROUTER_MODEL", "deepseek/deepseek-chat")
+    selected_image_model = args.image_model or os.environ.get("OPENROUTER_IMAGE_MODEL", "recraft/recraft-v4.1-flash-v2")
 
     print("=" * 65)
     print("🔍 OPENROUTER API DIAGNOSTIC & VERIFICATION")
@@ -113,12 +116,52 @@ def main():
         with urllib.request.urlopen(req, timeout=30) as resp:
             result = json.loads(resp.read().decode("utf-8"))
             content = result["choices"][0]["message"]["content"].strip()
-            print("   ✅ Completion successful!")
+            print("   ✅ Text script completion successful!")
             print(f"\n📜 Model Output:\n{content}")
-            print("\n🎉 OpenRouter is ready for automated video generation!")
     except Exception as e:
         print(f"   ❌ Completion generation failed: {e}")
 
+    # Optional: Test Image Generation API
+    if args.test_image:
+        print(f"\n🎨 3. Testing Unified Image Generation API ({selected_image_model})...")
+        img_payload = {
+            "model": selected_image_model,
+            "prompt": "2D graphic novel motion comic panel, blank white silhouette protagonist drinking coffee while arrogant guest boasts, cel-shaded art style, moody lighting",
+            "aspect_ratio": "9:16",
+            "n": 1
+        }
+        try:
+            img_req = urllib.request.Request(
+                "https://openrouter.ai/api/v1/images",
+                data=json.dumps(img_payload).encode("utf-8"),
+                headers={"Content-Type": "application/json", **auth_headers}
+            )
+            with urllib.request.urlopen(img_req, timeout=60) as resp:
+                img_data = json.loads(resp.read().decode("utf-8"))
+                data_list = img_data.get("data", [])
+                if data_list:
+                    item = data_list[0]
+                    test_out = os.path.join(BASE_DIR, "output", "test_openrouter_image.png")
+                    os.makedirs(os.path.dirname(test_out), exist_ok=True)
+                    if item.get("b64_json"):
+                        import base64
+                        with open(test_out, "wb") as f:
+                            f.write(base64.b64decode(item["b64_json"]))
+                        print(f"   ✅ Image successfully generated and saved to: {test_out}")
+                    elif item.get("url"):
+                        urllib.request.urlretrieve(item["url"], test_out)
+                        print(f"   ✅ Image successfully downloaded and saved to: {test_out}")
+                    else:
+                        print(f"   ✅ Image endpoint responded: {list(item.keys())}")
+                else:
+                    print("   ⚠️ Image API returned empty result.")
+        except urllib.error.HTTPError as e:
+            err_msg = e.read().decode("utf-8") if hasattr(e, "read") else str(e)
+            print(f"   ❌ Image API HTTP {e.code}: {err_msg}")
+        except Exception as e:
+            print(f"   ❌ Image generation test failed: {e}")
+
+    print("\n🎉 OpenRouter is ready for automated video generation!")
     print("=" * 65)
 
 if __name__ == "__main__":
