@@ -8,6 +8,7 @@ scripts can automatically upload videos to YouTube without manual browser logins
 
 import os
 import sys
+import json
 import argparse
 import urllib.parse
 import urllib.request
