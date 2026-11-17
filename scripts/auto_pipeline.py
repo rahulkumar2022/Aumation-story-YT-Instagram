@@ -204,6 +204,7 @@ def get_long_story(target_minutes: int = 10):
 async def synthesize_voice(text: str, output_path: str):
     import edge_tts
     print(f"🎙️  Synthesizing neural voice with ChristopherNeural...")
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
     c = edge_tts.Communicate(text, "en-US-ChristopherNeural", rate="+2%", pitch="-1Hz")
     raw_path = output_path + ".raw.mp3"
     await c.save(raw_path)
