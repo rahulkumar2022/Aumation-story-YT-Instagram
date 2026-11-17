@@ -150,55 +150,66 @@ class TestImageGenerationIntegration:
 
 class TestYouTubeUploaderIntegration:
     def test_uploader_workflow_lifecycle_mocked(self, tmp_path):
-        # Create a mock video file
-        mock_video_path = str(tmp_path / "sample_video.mp4")
-        with open(mock_video_path, "wb") as f:
-            f.write(b"SAMPLE_VIDEO_CONTENT")
+        # Isolate queue file to temp
+        temp_q = str(tmp_path / "temp_uploader_queue.json")
+        orig_q = uploader.QUEUE_FILE
+        orig_auto_q = auto_pipeline.QUEUE_FILE
+        uploader.QUEUE_FILE = temp_q
+        auto_pipeline.QUEUE_FILE = temp_q
 
-        # Seed the queue
-        initial_queue = [
-            {
-                "id": "short_integration_test_1",
-                "type": "short",
-                "title": "Pass The Salt Test",
-                "description": "Test description #shorts",
-                "tags": ["test", "shorts"],
-                "duration_seconds": 45.0,
-                "file_path": mock_video_path,
-                "status": "ready_to_post",
-                "posted": False
-            }
-        ]
-        auto_pipeline.save_queue(initial_queue)
+        try:
+            # Create a mock video file
+            mock_video_path = str(tmp_path / "sample_video.mp4")
+            with open(mock_video_path, "wb") as f:
+                f.write(b"SAMPLE_VIDEO_CONTENT")
 
-        # Mock token access & YouTube upload
-        with mock.patch("uploader.get_access_token", return_value="mock_valid_access_token"), \
-             mock.patch("uploader.upload_to_youtube", return_value="https://youtu.be/MOCK_VIDEO_ID"):
+            # Seed the queue
+            initial_queue = [
+                {
+                    "id": "short_integration_test_1",
+                    "type": "short",
+                    "title": "Pass The Salt Test",
+                    "description": "Test description #shorts",
+                    "tags": ["test", "shorts"],
+                    "duration_seconds": 45.0,
+                    "file_path": mock_video_path,
+                    "status": "ready_to_post",
+                    "posted": False
+                }
+            ]
+            auto_pipeline.save_queue(initial_queue)
 
-            # Run uploader scanning loop
-            queue = uploader.load_queue()
-            for item in queue:
-                if not item.get("posted", False):
-                    video_url = uploader.upload_to_youtube(
-                        item["file_path"],
-                        item["title"],
-                        item["description"],
-                        item["tags"],
-                        item["type"] == "short",
-                        "mock_valid_access_token"
-                    )
-                    item["posted"] = True
-                    item["status"] = "published"
-                    item["published_url"] = video_url
+            # Mock token access & YouTube upload
+            with mock.patch("uploader.get_access_token", return_value="mock_valid_access_token"), \
+                 mock.patch("uploader.upload_to_youtube", return_value="https://youtu.be/MOCK_VIDEO_ID"):
 
-            uploader.save_queue(queue)
+                # Run uploader scanning loop
+                queue = uploader.load_queue()
+                for item in queue:
+                    if not item.get("posted", False):
+                        video_url = uploader.upload_to_youtube(
+                            item["file_path"],
+                            item["title"],
+                            item["description"],
+                            item["tags"],
+                            item["type"] == "short",
+                            "mock_valid_access_token"
+                        )
+                        item["posted"] = True
+                        item["status"] = "published"
+                        item["published_url"] = video_url
 
-            # Assert queue updated
-            updated_queue = uploader.load_queue()
-            assert len(updated_queue) == 1
-            assert updated_queue[0]["posted"] is True
-            assert updated_queue[0]["status"] == "published"
-            assert updated_queue[0]["published_url"] == "https://youtu.be/MOCK_VIDEO_ID"
+                uploader.save_queue(queue)
+
+                # Assert queue updated
+                updated_queue = uploader.load_queue()
+                assert len(updated_queue) == 1
+                assert updated_queue[0]["posted"] is True
+                assert updated_queue[0]["status"] == "published"
+                assert updated_queue[0]["published_url"] == "https://youtu.be/MOCK_VIDEO_ID"
+        finally:
+            uploader.QUEUE_FILE = orig_q
+            auto_pipeline.QUEUE_FILE = orig_auto_q
 
 
 class TestRemotionBundleIntegration:
