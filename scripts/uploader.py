@@ -12,7 +12,26 @@ import json
 import urllib.request
 import urllib.error
 
-QUEUE_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "output", "publishing_queue.json")
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+QUEUE_FILE = os.path.join(BASE_DIR, "output", "publishing_queue.json")
+
+# Automatically load environment variables from .env if present
+def load_dotenv(dotenv_path=None):
+    if not dotenv_path:
+        dotenv_path = os.path.join(BASE_DIR, ".env")
+    if os.path.isfile(dotenv_path):
+        with open(dotenv_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                k, v = line.split("=", 1)
+                k = k.strip()
+                v = v.strip().strip("'\"")
+                if k and k not in os.environ:
+                    os.environ[k] = v
+
+load_dotenv()
 
 def get_access_token():
     client_id = os.environ.get("YOUTUBE_CLIENT_ID")
