@@ -54,6 +54,7 @@ jobs:
         run: |
           cd sample-video
           npm ci
+          npx remotion browser ensure
 
       - name: Determine Video Mode
         id: mode
@@ -73,6 +74,17 @@ jobs:
           OPENROUTER_IMAGE_MODEL: ${{ secrets.OPENROUTER_IMAGE_MODEL || 'recraft/recraft-v4.1-flash-v2' }}
         run: |
           python3 scripts/auto_pipeline.py --mode ${{ steps.mode.outputs.mode }} --generate-images
+
+      - name: Upload Video Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-${{ steps.mode.outputs.mode }}-video
+          path: |
+            output/shorts/*.mp4
+            output/long/*.mp4
+          retention-days: 7
+          if-no-files-found: ignore
 
       - name: Publish Video to Social Platforms
         env:

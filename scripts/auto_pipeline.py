@@ -242,7 +242,8 @@ def render_remotion(composition_id: str, out_file: str, duration_in_frames: int)
     ]
     res = subprocess.run(cmd, cwd=SAMPLE_VIDEO_DIR, capture_output=True, text=True)
     if res.returncode != 0:
-        print("❌ Remotion Render Error:", res.stderr[-500:])
+        print("❌ Remotion Render Error (stdout):", res.stdout[-800:])
+        print("❌ Remotion Render Error (stderr):", res.stderr[-800:])
         raise RuntimeError("Remotion render failed")
     print(f"✅  Render complete: {out_file}")
 
@@ -362,13 +363,15 @@ if __name__ == "__main__":
     parser.add_argument("--mode", choices=["short", "long"], required=True, help="Video mode (short=30-60s, long=8-20m)")
     parser.add_argument("--duration-minutes", type=int, default=10, help="Target duration in minutes for long mode (8-20)")
     parser.add_argument("--model", type=str, default=None, help="OpenRouter text model (e.g. deepseek/deepseek-chat, anthropic/claude-3.5-sonnet, openai/gpt-4o)")
+    parser.add_argument("--generate-images", action="store_true", default=True, help="Generate custom scene illustration panels using OpenRouter Image API")
     parser.add_argument("--no-images", action="store_true", help="Skip generating new AI images and use cached scene artwork")
     parser.add_argument("--image-model", type=str, default=None, help="OpenRouter image model (e.g. recraft/recraft-v4.1-flash-v2, bytedance-seed/seedream-5-0-flash, black-forest-labs/flux.2-flex)")
     args = parser.parse_args()
+    should_generate = False if args.no_images else True
     run_pipeline(
         args.mode,
         args.duration_minutes,
         model=args.model,
-        generate_images=not args.no_images,
+        generate_images=should_generate,
         image_model=args.image_model
     )
