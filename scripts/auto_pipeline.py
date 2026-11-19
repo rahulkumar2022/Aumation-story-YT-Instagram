@@ -18,6 +18,7 @@ import subprocess
 import sys
 import urllib.request
 import urllib.error
+import seo_keywords
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SAMPLE_VIDEO_DIR = os.path.join(BASE_DIR, "sample-video")
@@ -64,11 +65,12 @@ def generate_story_with_openrouter(mode: str, target_minutes: int = 10, model: s
     if mode == "short":
         prompt = (
             "Write a viral 30 to 50 second second-person POV storytelling script in the style of the 'Quiet Capital' YouTube channel. "
-            "Theme: Subtle stealth wealth, family dinner arrogance, or corporate karma where an arrogant person gets humbled by the quiet protagonist. "
+            "Theme: Subtle stealth wealth, billionaire in disguise, toxic family dinner arrogance, or corporate karma where an arrogant person gets humbled by the quiet protagonist. "
+            "Incorporate high-ranking YouTube search terms: 'pov stories', 'billionaire pov', 'animated stories', 'motion comic', 'billionaire in disguise', 'pass the salt pov', 'rich vs poor'. "
             "Format: Return ONLY a valid JSON object with keys: "
-            "'title' (high CTR YouTube title), "
-            "'description' (2 sentences with hashtags #pov #karma #shorts), "
-            "'tags' (array of 5 tag strings), "
+            "'title' (high CTR YouTube title starting with 'POV:' using formulas like 'POV: The Waiter Is Actually The Billionaire Owner (Motion Comic)' or 'POV: When Your Toxic Family Realizes Who You Are'), "
+            "'description' (engaging 2-sentence synopsis focusing on karma, billionaire in disguise, and stealth wealth), "
+            "'tags' (array of 6-8 tags like 'pov stories', 'billionaire pov', 'animated stories', 'motion comic', 'rich vs poor'), "
             "'script' (the exact spoken narration text, approximately 90 to 130 words), "
             "'image_prompts' (array of exactly 3 visual scene descriptions for motion comic panels: 1. opening dinner scene, 2. tense phone call scene, 3. plot twist reveal scene)."
         )
@@ -77,12 +79,13 @@ def generate_story_with_openrouter(mode: str, target_minutes: int = 10, model: s
         prompt = (
             f"Write a gripping, multi-chapter long-form second-person POV storytelling script targeted for {target_minutes} minutes "
             f"(approximately {target_words} words spoken narration) in the style of the 'Quiet Capital' YouTube channel. "
-            "Theme: A quiet, underestimated protagonist who secretly achieved massive financial/corporate success, "
+            "Theme: A quiet, underestimated protagonist who secretly achieved massive financial/corporate success (billionaire heir / stealth wealth owner), "
             "contrasted with boastful relatives or colleagues, culminating in a satisfying, quiet checkmate twist. "
+            "Incorporate high-ranking YouTube search terms: 'pov stories', 'billionaire pov', 'animated stories', 'motion comic', 'billionaire family pov', 'pass the salt pov', 'from poverty to billionaire'. "
             "Format: Return ONLY a valid JSON object with keys: "
-            "'title' (dramatic YouTube title), "
-            "'description' (engaging summary with hashtags), "
-            "'tags' (array of 6 tag strings), "
+            "'title' (dramatic high-CTR YouTube title starting with 'POV:' e.g. 'POV: You Belong To A Billionaire Family... But They Forgot You Own The Company'), "
+            "'description' (gripping 2-3 sentence summary detailing the stealth wealth plot and family drama), "
+            "'tags' (array of 8 search tags like 'pov stories', 'billionaire pov', 'animated stories', 'motion comic', 'stealth wealth', 'full story'), "
             "'script' (the complete narration, broken into 5-6 acts, vivid storytelling dialogue), "
             "'image_prompts' (array of exactly 5 visual scene descriptions for widescreen panels across the 5 acts)."
         )
@@ -126,8 +129,17 @@ def generate_story_with_openrouter(mode: str, target_minutes: int = 10, model: s
 def get_short_story():
     return {
         "title": "POV: Your brother brags at dinner... not knowing you own the building",
-        "description": "Never brag before you know who signs the lease. Sibling rivalry meets the ultimate workplace plot twist. #pov #karma #storytime #quietwealth #shorts",
-        "tags": ["pov", "storytime", "instantkarma", "quietwealth", "shorts", "reels"],
+        "description": "Never brag before you know who signs the lease. Toxic family arrogance meets the ultimate billionaire checkmate. #pov #povstories #billionairepov #motioncomic #animatedstories #storytime #shorts",
+        "tags": [
+            "pov stories",
+            "billionaire pov",
+            "animated stories",
+            "motion comic",
+            "billionaire in disguise",
+            "pass the salt pov",
+            "rich vs poor",
+            "shorts"
+        ],
         "script": (
             "POV: Every family dinner, your older brother Marcus makes sure everyone knows he is the golden child. "
             "Tonight, he stands up at the table, waving an approval letter for a four-thousand-dollar luxury penthouse downtown. "
@@ -191,9 +203,19 @@ def get_long_story(target_minutes: int = 10):
     ]
 
     return {
-        "title": "POV: Your Family Calls You The Failure — Until Marcus Brings You To His Corporate Gala",
-        "description": "For seven years, your family believed you were unemployed while Marcus flexed his title. Until the annual Apex Gala. #pov #storytime #stealthwealth #drama #karma",
-        "tags": ["stealthwealth", "familydrama", "storytime", "quietwealth", "corporatekarma", "longform"],
+        "title": "POV: You Belong To A Billionaire Family... But They Forgot You Own The Company",
+        "description": "For seven years, your toxic family treated you like an unemployed failure while Marcus flexed his title. Until the annual Apex Gala. #pov #povstories #billionairepov #motioncomic #animatedstories #storytime #fullstory",
+        "tags": [
+            "pov stories",
+            "billionaire pov",
+            "animated stories",
+            "motion comic",
+            "billionaire family pov",
+            "stealth wealth",
+            "pass the salt pov",
+            "corporate karma",
+            "full story"
+        ],
         "script": "\n\n".join(chapters)
     }
 
@@ -338,12 +360,14 @@ def run_pipeline(mode: str, duration_minutes: int = 10, model: str = None, gener
 
     # Step 5: Enqueue for Publishing
     queue = load_queue()
+    formatted_desc = seo_keywords.format_description(story.get("description", ""), is_short=(mode == "short"))
+    enriched_tags = seo_keywords.enrich_tags(story.get("tags", []), mode=mode)
     entry = {
         "id": f"{mode}_{timestamp}",
         "type": mode,
         "title": story["title"],
-        "description": story["description"],
-        "tags": story["tags"],
+        "description": formatted_desc,
+        "tags": enriched_tags,
         "duration_seconds": round(duration_secs, 2),
         "file_path": out_path,
         "created_at": datetime.datetime.now().isoformat(),

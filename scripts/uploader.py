@@ -11,6 +11,7 @@ import sys
 import json
 import urllib.request
 import urllib.error
+import seo_keywords
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 QUEUE_FILE = os.path.join(BASE_DIR, "output", "publishing_queue.json")
@@ -59,12 +60,19 @@ def get_access_token():
         return None
 
 def upload_to_youtube(video_path: str, title: str, description: str, tags: list, is_short: bool, access_token: str):
-    print(f"📤 Uploading '{title}' to YouTube...")
+    final_title = seo_keywords.format_title(title, is_short=is_short)
+    if "🔍 Topics & Search Queries:" not in description:
+        final_description = seo_keywords.format_description(description, is_short=is_short)
+    else:
+        final_description = description
+    final_tags = seo_keywords.enrich_tags(tags, mode="short" if is_short else "long")
+
+    print(f"📤 Uploading '{final_title}' to YouTube...")
     metadata = {
         "snippet": {
-            "title": f"{title} #Shorts" if is_short and "#Shorts" not in title else title,
-            "description": description,
-            "tags": tags,
+            "title": final_title,
+            "description": final_description,
+            "tags": final_tags,
             "categoryId": "24" # Entertainment
         },
         "status": {

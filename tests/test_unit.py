@@ -19,6 +19,7 @@ sys.path.insert(0, SCRIPTS_DIR)
 import auto_pipeline
 import generate_images
 import uploader
+import seo_keywords
 
 class TestDotEnvLoader:
     def test_load_dotenv_parses_cleanly(self):
@@ -186,3 +187,59 @@ class TestYouTubeUploaderMetadata:
         is_short = False
         formatted_title = f"{title} #Shorts" if is_short and "#Shorts" not in title else title
         assert formatted_title == "The Full Story of How Marcus Lost the Deal"
+
+
+class TestSEOKeywordEngine:
+    def test_primary_keywords_defined(self):
+        expected_keywords = [
+            "pov stories",
+            "billionaire pov",
+            "animated stories",
+            "motion comic",
+            "billionaire in disguise",
+            "pass the salt pov"
+        ]
+        for kw in expected_keywords:
+            assert kw in seo_keywords.PRIMARY_SEARCH_KEYWORDS
+
+    def test_format_title_short_appends_shorts(self):
+        title = "POV: The Waiter Is Actually The Billionaire Heir (Motion Comic)"
+        formatted = seo_keywords.format_title(title, is_short=True)
+        assert formatted.endswith("#Shorts")
+        assert len(formatted) <= 100
+
+    def test_format_title_short_already_has_tag(self):
+        title = "POV: When Your Toxic Family Realizes Who You Are #Shorts"
+        formatted = seo_keywords.format_title(title, is_short=True)
+        assert formatted == title
+        assert formatted.count("#Shorts") == 1
+
+    def test_format_title_long_preserves_length(self):
+        title = "POV: You Belong To A Billionaire Family... But They Forgot You Own The Company"
+        formatted = seo_keywords.format_title(title, is_short=False)
+        assert not formatted.endswith("#Shorts")
+        assert len(formatted) <= 100
+
+    def test_format_description_contains_seo_blocks(self):
+        summary = "Never brag before you know who signs the lease."
+        desc = seo_keywords.format_description(summary, is_short=True)
+        assert summary in desc
+        assert "@PassTheSaltPOV" in desc
+        assert "🔍 Topics & Search Queries:" in desc
+        assert "#pov" in desc
+        assert "#billionairepov" in desc
+        assert "#motioncomic" in desc
+        assert "#shorts" in desc
+
+    def test_enrich_tags_includes_keywordtool_clusters(self):
+        custom_tags = ["family drama", "toxic brother"]
+        enriched = seo_keywords.enrich_tags(custom_tags, mode="short")
+        assert "family drama" in enriched
+        assert "toxic brother" in enriched
+        assert "pov stories" in enriched
+        assert "billionaire pov" in enriched
+        assert "motion comic" in enriched
+        assert len(enriched) <= 20
+        # No duplicates
+        assert len(enriched) == len(set(t.lower() for t in enriched))
+
