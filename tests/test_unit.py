@@ -231,6 +231,19 @@ class TestSEOKeywordEngine:
         assert "#motioncomic" in desc
         assert "#shorts" in desc
 
+    def test_description_contains_at_least_10_keywords(self):
+        summary = "A quiet brother reveals the truth at dinner."
+        desc = seo_keywords.format_description(summary, is_short=True)
+        desc_lower = desc.lower()
+        
+        # Verify at least 10 keywords are present
+        found_keywords = [kw for kw in seo_keywords.DESCRIPTION_KEYWORDS if kw in desc_lower]
+        assert len(found_keywords) >= 10
+        assert "pov stories" in found_keywords
+        assert "billionaire in disguise" in found_keywords
+        assert "pass the salt pov" in found_keywords
+        assert "rich vs poor" in found_keywords
+
     def test_enrich_tags_includes_keywordtool_clusters(self):
         custom_tags = ["family drama", "toxic brother"]
         enriched = seo_keywords.enrich_tags(custom_tags, mode="short")

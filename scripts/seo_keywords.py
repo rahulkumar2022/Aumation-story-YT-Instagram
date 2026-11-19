@@ -24,6 +24,20 @@ PRIMARY_SEARCH_KEYWORDS = [
     "instant karma",
 ]
 
+# Curated top 10 keywords explicitly embedded in video descriptions
+DESCRIPTION_KEYWORDS = [
+    "pov stories",
+    "billionaire pov",
+    "animated stories",
+    "motion comic",
+    "billionaire in disguise",
+    "billionaire family pov",
+    "pass the salt pov",
+    "rich vs poor",
+    "stealth wealth",
+    "life lessons story",
+]
+
 # Curated tags for YouTube upload metadata
 RECOMMENDED_TAGS_SHORTS = [
     "pov stories",
@@ -141,12 +155,13 @@ def format_description(base_summary: str, is_short: bool = True, extra_context: 
         "motion comics, subtle wealth parables, and quiet karma animated stories."
     )
 
+    keyword_bullets = "\n".join(f"• {kw.title()}" for kw in DESCRIPTION_KEYWORDS)
+    keywords_cloud = ", ".join(DESCRIPTION_KEYWORDS)
+
     keyword_block = (
         "🔍 Topics & Search Queries:\n"
-        "• POV Stories & Dramatic Life Lessons\n"
-        "• Billionaire in Disguise / Secret Heir Motion Comic\n"
-        "• Toxic Family Dinner Karma & Stealth Wealth\n"
-        "• Animated 2D Graphic Novel Stories"
+        f"{keyword_bullets}\n\n"
+        f"🏷️ Related Keywords: {keywords_cloud}"
     )
 
     hashtags = " ".join(HASHTAGS_SHORTS if is_short else HASHTAGS_LONG)
