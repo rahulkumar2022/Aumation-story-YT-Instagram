@@ -66,10 +66,13 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "mode=${{ inputs.mode }}" >> $GITHUB_OUTPUT
-          elif [ "$(date +'%d') % 4" -eq 0 ]; then
+            echo "Selected mode (manual dispatch): ${{ inputs.mode }}"
+          elif [ "${{ github.event.schedule }}" = "0 14 */4 * *" ]; then
             echo "mode=long" >> $GITHUB_OUTPUT
+            echo "Selected mode (scheduled long cron): long"
           else
             echo "mode=short" >> $GITHUB_OUTPUT
+            echo "Selected mode (scheduled short / default): short"
           fi
 
       - name: Run Pipeline (Script + Audio + Remotion Render)
